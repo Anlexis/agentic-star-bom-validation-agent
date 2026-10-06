@@ -1,0 +1,32 @@
+# Runtime parameters — loaded by AgentRegistry, passed as Graph(config=...).
+# Separate from config/agent.yaml (the static manifest).
+# In the standalone deployment the same file is read by _runtime_config()
+# (src/graph/graph.py): it is passed to the outer graph constructor and the
+# `validation` block below is forwarded to the inner BOM validation graph.
+
+max_retry: 3
+timeout_s: 30
+
+# Domain validation rules. Every key is optional and every value is validated
+# before it is forwarded — a malformed rule is dropped and the node falls back
+# to its documented default rather than validating against a broken rule.
+validation:
+  # OEM part-number format rule. Line items whose part number does not match
+  # are reported as FAIL. Must be a compilable regular expression.
+  part_number_pattern: "^[A-Z]{2,4}-\\d{4,8}(-[A-Z0-9]{1,4})?$"
+
+  # Approved Supplier List — exact, case-sensitive supplier names. An empty
+  # list means "no ASL configured": every supplier is accepted.
+  approved_suppliers: []
+
+  # Compliance lookup keyed by part number:
+  #   {"<part_number>": {"rohs_compliant": bool,
+  #                      "reach_compliant": bool,
+  #                      "hazardous_substances": ["<substance>", ...]}}
+  # Parts absent from the table are treated as compliant — the same "absence
+  # means no known concern" model the industry declaration databases use.
+  rohs_reach_db: {}
+
+  # Hard ceiling on BOM line items processed in one invocation. A caller may
+  # narrow it per request via input_context.max_line_items, never widen it.
+  max_line_items: 5000
